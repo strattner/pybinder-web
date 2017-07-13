@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block content %}
+    {% if answer %}
+        <table>
+        <tr><th>Query</th><th>Answer</th></tr>
+        {% for query, value in answer.items() %}
+            <tr><td>{{ query }}</td><td>{{ value }}</td></tr>
+        {% endfor %}
+        </table>
+        </ul>
+    {% endif %}
+{% endblock %}

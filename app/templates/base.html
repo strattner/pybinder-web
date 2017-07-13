@@ -1,0 +1,29 @@
+<html>
+    <head>
+        {% if title %}
+        <title>{{ title }} - DNS Management Service</title>
+        {% else %}
+        <title>Welcome to DNS Management Service</title>
+        {% endif %}
+        <style>
+            table {
+            width:30%;
+            }
+            tr:nth-of-type(odd) {
+            background-color:#CEE3F6;
+            }
+            th {
+            background-color:#58ACFA;
+            }
+            th, td {
+            text-align:center;
+            }
+        </style>
+    </head>
+    <body>
+        <div>Index: <a href="/index">Home</a> <a href="/search">Search</a></div>
+        <hr>
+        {% block content %}
+        {% endblock %}
+    </body>
+</html>
