@@ -1,26 +1,29 @@
-import os, sys
+import os
+import sys
 from collections import OrderedDict
 from pam import pam
 from flask import render_template
-from flask_basicauth import BasicAuth
+from flask_httpauth import HTTPBasicAuth
 from app import app
 from .forms import SearchForm
 
-class SystemAuth(BasicAuth):
+class SystemAuth(object):
     """
-    Overriding BasicAuth to provide PAM-based authentication
-    checking.
+    Rely on PAM for system authentication verification
     """
 
-    @staticmethod
-    def check_credentials(username, password):
-        """
-        Checks user and pwd against system
-        """
-        system_auth = pam()
-        return system_auth.authenticate(username, password, service='login')
+    def __init__(self):
+        self.auth = pam()
 
-basic_auth = SystemAuth(app)
+    def authenticate(self, user, pwd):
+        return self.auth.authenticate(user, pwd, service='login')
+
+auth = HTTPBasicAuth()
+system_auth = SystemAuth()
+
+@auth.verify_password
+def verify_pwd(user, pwd):
+    return system_auth.authenticate(user, pwd)
 
 # Assumes that pybinder is a sibling folder (same parent). Adjust if necessary.
 pybinder_path = os.path.abspath(os.path.join('..', 'pybinder'))
@@ -50,11 +53,11 @@ def search_main():
         answer = OrderedDict()
         for query in query_terms:
             result = str(searcher.query(query))
-            answer[query] = result.split(' ',1)[1]
+            answer[query] = result.split(' ', 1)[1]
         return render_template('search_results.html', answer=answer)
     return render_template('search.html', title='Search', zone=forward_zone, form=form)
 
 @app.route('/add', methods=['GET', 'POST'])
-@basic_auth.required
+@auth.login_required
 def add_main():
-    return render_template('add.html')
+    return render_template('add.html', user=auth.username())
