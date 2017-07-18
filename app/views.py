@@ -15,11 +15,10 @@ class SystemAuth(BasicAuth):
     @staticmethod
     def check_credentials(username, password):
         """
-        Uses the 'sshd' service on PAM, which works better if external
-        authentication (Radius, for example) is being performed.
+        Checks user and pwd against system
         """
         system_auth = pam()
-        return system_auth.authenticate(username, password, service='sshd')
+        return system_auth.authenticate(username, password, service='login')
 
 basic_auth = SystemAuth(app)
 
