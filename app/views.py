@@ -1,8 +1,27 @@
 import os, sys
 from collections import OrderedDict
+from pam import pam
 from flask import render_template
+from flask_basicauth import BasicAuth
 from app import app
 from .forms import SearchForm
+
+class SystemAuth(BasicAuth):
+    """
+    Overriding BasicAuth to provide PAM-based authentication
+    checking.
+    """
+
+    @staticmethod
+    def check_credentials(username, password):
+        """
+        Uses the 'sshd' service on PAM, which works better if external
+        authentication (Radius, for example) is being performed.
+        """
+        system_auth = pam()
+        return system_auth.authenticate(username, password, service='sshd')
+
+basic_auth = SystemAuth(app)
 
 # Assumes that pybinder is a sibling folder (same parent). Adjust if necessary.
 pybinder_path = os.path.abspath(os.path.join('..', 'pybinder'))
