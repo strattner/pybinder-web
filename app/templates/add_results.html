@@ -1,0 +1,8 @@
+{% extends 'base.html' %}
+{% block content %}
+    {% if answer %}
+        {% for ans in answer %}
+        <p>{{ ans }}</p>
+        {% endfor %}
+    {% endif %}
+{% endblock %}

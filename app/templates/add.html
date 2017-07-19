@@ -1,7 +1,22 @@
 {% extends 'base.html' %}
 {% block content %}
-<h1>DNS Management System</h1>
+<h2>Add</h2>
 <p></p>
-<p>Hello {{ user }}</p>
-<p></p>
+<form action ="" method="post" name="add">
+    {{ form.hidden_tag() }}
+    <p>
+    Enter hostname (assumes {{ zone }}) or FQDN and one or more IP addresses (separated by a space):<br>
+    {{ form.name(size=80) }}<br>
+    {% for error in form.name.errors %}
+        <span style="color:red;">[{{ error }}]</span>
+    {% endfor %}
+    </p>
+    <p>
+    {{ form.ipaddr(size=80) }}<br>
+    {% for error in form.ipaddr.errors %}
+        <span style="color:red;">[{{ error }}]</span>
+    {% endfor %}
+    </p>
+    <p><input type="submit" value="Add"></p>
+</form>
 {% endblock %}

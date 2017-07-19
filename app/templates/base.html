@@ -23,8 +23,12 @@
     <body>
         <div>
             Index: <a href="/index">Home</a> <a href="/search">Search</a> <a href="/add">Add</a>
+            {% if user %}
+            <span style="float:right"><a href="/history">{{ user }}</a></span>
+            {% endif %}
         </div>
         <hr>
+        <h1>DNS Management System</h1><p></p>
         {% block content %}
         {% endblock %}
     </body>

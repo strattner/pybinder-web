@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block content %}
+<h3>DNS modification history for {{ user }} (most recent first):</h3>
+<p></p>
+{% for transaction in history %}
+    <p>
+    {% for action in transaction %}
+        {{ action|string }}
+    {% endfor %}
+    </p>
+{% endfor %}
+{% endblock %}
