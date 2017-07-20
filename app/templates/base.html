@@ -6,6 +6,40 @@
         <title>Welcome to DNS Management Service</title>
         {% endif %}
         <style>
+            div.submit .button {
+                background-color: #5882FA;
+                color: white;
+                font-size: 13px;
+            }
+            div.submit .button:hover {
+                background-color: #2E2EFE;
+            }
+            ul.menu {
+                list-style-type: none;
+                margin: 0;
+                padding: 0;
+                overflow: hidden;
+                background-color: #5882FA;
+            }
+            li.menu {
+                float: left;
+            }
+            li.user {
+                float: right;
+            }
+            li.range {
+                padding-left: 30px;
+            }
+            li.menu a {
+                display: block;
+                color: white;
+                text-align: center;
+                padding: 16px;
+                text-decoration: none;
+            }
+            li.menu a:hover {
+                background-color: #2E2EFE;
+            }
             table {
             width:30%;
             }
@@ -21,12 +55,19 @@
         </style>
     </head>
     <body>
-        <div>
-            Index: <a href="/index">Home</a> <a href="/search">Search</a> <a href="/add">Add</a>
+        <ul class="menu">
+            <li class="menu"><a href="/index">Home</a></li>
+            <li class="menu"><a href="/search">Search</a></li>
+            <li class="menu"><a href="/add">Add</a></li>
+            <li class="menu"><a href="/replace">Replace</a></li>
+            <li class="menu"><a href="/delete">Delete</a></li>
+            <li class="menu range"><a href="/range-add">Range Add</a></li>
+            <li class="menu"><a href="/range-replace">Range Replace</a></li>
+            <li class="menu"><a href="/range-delete">Range Delete</a></li>
             {% if user %}
-            <span style="float:right"><a href="/history">{{ user }}</a></span>
+            <li class="menu user"><a href="/history">{{ user }}</a></li>
             {% endif %}
-        </div>
+        </ul>
         <hr>
         <h1>DNS Management System</h1><p></p>
         {% block content %}

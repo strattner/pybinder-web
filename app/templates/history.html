@@ -2,11 +2,15 @@
 {% block content %}
 <h3>DNS modification history for {{ user }} (most recent first):</h3>
 <p></p>
+<ol>
 {% for transaction in history %}
-    <p>
-    {% for action in transaction %}
-        {{ action|string }}
-    {% endfor %}
-    </p>
+    <li>
+        <ul>
+        {% for action in transaction %}
+            <li>{{ action|string }}</li>
+        {% endfor %}
+        </ul>
+    </li>
 {% endfor %}
+</ol>
 {% endblock %}

@@ -1,22 +1,31 @@
 {% extends 'base.html' %}
 {% block content %}
 <h2>Add</h2>
-<p></p>
+<p>
+    Enter hostname (assumes {{ zone }}) or FQDN and one or more IP addresses (separated by a space):<br>
+</p>
 <form action ="" method="post" name="add">
     {{ form.hidden_tag() }}
-    <p>
-    Enter hostname (assumes {{ zone }}) or FQDN and one or more IP addresses (separated by a space):<br>
-    {{ form.name(size=80) }}<br>
-    {% for error in form.name.errors %}
-        <span style="color:red;">[{{ error }}]</span>
-    {% endfor %}
-    </p>
-    <p>
-    {{ form.ipaddr(size=80) }}<br>
-    {% for error in form.ipaddr.errors %}
-        <span style="color:red;">[{{ error }}]</span>
-    {% endfor %}
-    </p>
-    <p><input type="submit" value="Add"></p>
+    <div class="form">
+        <div class="label">
+            {{ form.name.label }}
+        </div>
+        {{form.name(size=80) }}
+        {% for error in form.name.errors %}
+            <span style="color:red;">[{{ error }}]</span>
+        {% endfor %}
+        <br>
+        <div class="label">
+        {{ form.ipaddr.label }}
+        </div>
+        {{form.ipaddr(size=80) }}
+        {% for error in form.ipaddr.errors %}
+            <span style="color:red;">[{{ error }}]</span>
+        {% endfor %}
+    </div>
+    <br><br>
+    <div class="submit">
+        <input type="submit" value="Add" class="button">
+    </div>
 </form>
 {% endblock %}
