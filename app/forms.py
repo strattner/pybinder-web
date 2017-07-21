@@ -8,3 +8,6 @@ class SearchForm(FlaskForm):
 class AddForm(FlaskForm):
     name = StringField('Name:', validators=[DataRequired()])
     ipaddr = StringField('Address:', validators=[DataRequired()])
+
+class DeleteForm(FlaskForm):
+    entry = StringField('Entry:', validators=[DataRequired()])

@@ -1,9 +1,16 @@
 {% extends 'base.html' %}
 {% block content %}
-<h2>Add</h2>
+{% if force %}
+    <h2>Replace</h2>
+{% else %}
+    <h2>Add</h2>
+{% endif %}
 <p>
     Enter hostname (assumes {{ zone }}) or FQDN and one or more IP addresses (separated by a space):<br>
 </p>
+{% if force %}
+    <p>Warning: This will delete any existing records in order to add the requested entries!</p>
+{% endif %}
 <form action ="" method="post" name="add">
     {{ form.hidden_tag() }}
     <div class="form">

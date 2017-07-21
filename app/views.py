@@ -5,7 +5,7 @@ from pam import pam
 from flask import render_template
 from flask_httpauth import HTTPBasicAuth
 from app import app
-from .forms import AddForm, SearchForm
+from .forms import AddForm, DeleteForm, SearchForm
 
 class SystemAuth(object):
     """
@@ -78,7 +78,7 @@ def search_main():
 
 @app.route('/add', methods=['GET', 'POST'])
 @auth.login_required
-def add_main():
+def add_main(force=False):
     form = AddForm()
     user = auth.username()
     if user not in dns_manager:
@@ -87,11 +87,32 @@ def add_main():
         name = form.name.data
         ipaddr = form.ipaddr.data.split(' ')
         try:
-            answer = dns_manager[user].add_record(name, ipaddr)
+            answer = dns_manager[user].add_record(name, ipaddr, force)
         except ManageDNSError as mde:
-            return render_template('add_errors.html', error=[mde], user=user) 
-        return render_template('add_results.html', answer=answer, user=user)
-    return render_template('add.html', zone=forward_zone, user=user, form=form)
+            return render_template('errors.html', error=[mde], user=user) 
+        return render_template('results.html', answer=answer, user=user)
+    return render_template('add.html', force=force, zone=forward_zone, user=user, form=form)
+
+@app.route('/replace', methods=['GET', 'POST'])
+@auth.login_required
+def replace_main():
+    return add_main(True)
+
+@app.route('/delete', methods=['GET', 'POST'])
+@auth.login_required
+def delete_main():
+    form = DeleteForm()
+    user = auth.username()
+    if user not in dns_manager:
+        dns_manager[user] = create_manager(user)
+    if form.validate_on_submit():
+        entry = form.entry.data
+        try:
+            answer = dns_manager[user].delete_record(entry)
+        except ManageDNSError as mde:
+            return render_template('errors.html', error=[mde], user=user)
+        return render_template('results.html', answer=answer, user=user)
+    return render_template('delete.html', zone=forward_zone, user=user, form=form)
 
 @app.route('/history')
 @auth.login_required
