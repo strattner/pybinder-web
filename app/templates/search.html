@@ -1,16 +1,24 @@
 {% extends "base.html" %}
 {% block content %}
     <h2>Search</h2>
-    <form action="" method="post" name="search">
-        {{ form.hidden_tag() }}
         <p>
-            Enter one or more search terms, separated by a space:<br>
-            {{ form.search_terms(size=80) }}<br>
-            {% for error in form.search_terms.errors %}
-                <span style="color: red;">[{{ error }}]</span>
-            {% endfor %}<br>
+            Enter one or more search terms, separated by a space. If FQDN is not provided,
+            search domain will be {{ zone }}.
         </p>
-        <p><input type="submit" value="Search"></p>
+            <form action="" method="post" name="search">
+            {{ form.hidden_tag() }}
+            <div class="form">
+                <div class="label">
+                    {{ form.search_terms.label }}
+                </div>
+                {{ form.search_terms(size=80) }}
+                {% for error in form.search_terms.errors %}
+                    <span style="color: red;">[{{ error }}]</span>
+                {% endfor %}<br>
+            </div>
+        <br><br>
+        <div class="submit">
+            <input type="submit" value="Search" class="button">
+        </div>
     </form>
-    <h3>Note: If FQDN not provided, search domain will be: {{ zone }}</h3>
 {% endblock %}

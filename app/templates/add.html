@@ -6,10 +6,10 @@
     <h2>Add</h2>
 {% endif %}
 <p>
-    Enter hostname (assumes {{ zone }}) or FQDN and one or more IP addresses (separated by a space):<br>
+    Enter hostname (assumes {{ zone }}) or FQDN and one or more IP addresses (separated by a space).<br>
 </p>
 {% if force %}
-    <p>Warning: This will delete any existing records in order to add the requested entries!</p>
+    <p>Warning: This will delete any existing records necessary to add the requested entry!</p>
 {% endif %}
 <form action ="" method="post" name="add">
     {{ form.hidden_tag() }}
@@ -32,7 +32,11 @@
     </div>
     <br><br>
     <div class="submit">
-        <input type="submit" value="Add" class="button">
+        {% if force %}
+            <input type="submit" value="Replace" class="button">
+        {% else %}
+            <input type="submit" value="Add" class="button">
+        {% endif %}
     </div>
 </form>
 {% endblock %}

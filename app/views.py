@@ -59,9 +59,10 @@ def index():
 
 @app.route('/search/<name_or_address>')
 def search_specific(name_or_address):
+    user = auth.username()
     answer = {}
     answer[name_or_address] = str(searcher.query(name_or_address)).split(' ', 1)[1]
-    return render_template('search_results.html', answer=answer, user=auth.username())
+    return render_template('search_results.html', title='Search', answer=answer, user=user)
 
 @app.route('/search', methods=['GET', 'POST'])
 def search_main():
@@ -73,30 +74,31 @@ def search_main():
         for query in query_terms:
             result = str(searcher.query(query))
             answer[query] = result.split(' ', 1)[1]
-        return render_template('search_results.html', answer=answer, user=user)
+        return render_template('search_results.html', title='Search', answer=answer, user=user)
     return render_template('search.html', title='Search', zone=forward_zone, form=form, user=user)
 
 @app.route('/add', methods=['GET', 'POST'])
 @auth.login_required
-def add_main(force=False):
+def add_main(force=False, title='Add'):
     form = AddForm()
     user = auth.username()
     if user not in dns_manager:
-        dns_manager[user] = create_manager(user) 
+        dns_manager[user] = create_manager(user)
     if form.validate_on_submit():
         name = form.name.data
         ipaddr = form.ipaddr.data.split(' ')
         try:
             answer = dns_manager[user].add_record(name, ipaddr, force)
         except ManageDNSError as mde:
-            return render_template('errors.html', error=[mde], user=user) 
-        return render_template('results.html', answer=answer, user=user)
-    return render_template('add.html', force=force, zone=forward_zone, user=user, form=form)
+            return render_template('errors.html', title='Error', error=[mde], user=user)
+        return render_template('results.html', title=title, answer=answer, user=user)
+    return render_template('add.html', title=title, force=force,
+                           zone=forward_zone, user=user, form=form)
 
 @app.route('/replace', methods=['GET', 'POST'])
 @auth.login_required
 def replace_main():
-    return add_main(True)
+    return add_main(True, 'Replace')
 
 @app.route('/delete', methods=['GET', 'POST'])
 @auth.login_required
@@ -110,9 +112,9 @@ def delete_main():
         try:
             answer = dns_manager[user].delete_record(entry)
         except ManageDNSError as mde:
-            return render_template('errors.html', error=[mde], user=user)
-        return render_template('results.html', answer=answer, user=user)
-    return render_template('delete.html', zone=forward_zone, user=user, form=form)
+            return render_template('errors.html', title='Error', error=[mde], user=user)
+        return render_template('results.html', title='Delete', answer=answer, user=user)
+    return render_template('delete.html', title='Delete', zone=forward_zone, user=user, form=form)
 
 @app.route('/history')
 @auth.login_required
@@ -121,4 +123,15 @@ def history():
     if user not in dns_manager:
         dns_manager[user] = create_manager(user)
     history = dns_manager[user].get_history()
-    return render_template('history.html', history=reversed(history), user=user)
+    if history:
+        history = reversed(history)
+    return render_template('history.html', title='History', history=history, user=user)
+
+@app.route('/clear-history', methods=['POST'])
+@auth.login_required
+def clear_history():
+    user = auth.username()
+    if user in dns_manager:
+        dns_manager[user].clear_history()
+    history = dns_manager[user].get_history()
+    return render_template('history.html', title='History', history=history, user=user)

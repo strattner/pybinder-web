@@ -1,15 +1,23 @@
 {% extends "base.html" %}
 {% block content %}
     <h2>Delete</h2>
+    <p>
+        Enter hostname (assumes {{ zone }}), FQDN, or IP address to delete.
+    </p>
     <form action="" method="post" name="delete">
         {{ form.hidden_tag() }}
-        <p>
-            Enter hostname (assumes {{ zone }}), FQDN, or IP address to delete:<br>
-            {{ form.entry(size=80) }}<br>
+        <div class="form">
+            <div class="label">
+                {{ form.entry.label }}
+            </div>
+            {{ form.entry(size=80) }}
             {% for error in form.entry.errors %}
                 <span style="color: red;">[{{ error }}]</span>
-            {% endfor %}<br>
-        </p>
-        <p><input type="submit" value="Search"></p>
+            {% endfor %}
+        </div>
+        <br><br>
+        <div class="submit">
+            <input type="submit" value="Delete" class="button">
+        </div>
     </form>
 {% endblock %}

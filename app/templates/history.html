@@ -1,16 +1,25 @@
 {% extends 'base.html' %}
 {% block content %}
-<h3>DNS modification history for {{ user }} (most recent first):</h3>
-<p></p>
-<ol>
-{% for transaction in history %}
-    <li>
-        <ul>
-        {% for action in transaction %}
-            <li>{{ action|string }}</li>
-        {% endfor %}
-        </ul>
-    </li>
-{% endfor %}
-</ol>
+{% if history %}
+    <h3>DNS modification history for {{ user }} (most recent first):</h3>
+    <br>
+    <div class="submit">
+        <form action="/clear-history" method="post">
+            <button name="clearHistory" type="submit" class="button">Clear History</button>
+        <form>
+    </div>
+    <ol>
+    {% for transaction in history %}
+        <li>
+            <ul>
+            {% for action in transaction %}
+                <li>{{ action|string }}</li>
+            {% endfor %}
+            </ul>
+        </li>
+    {% endfor %}
+    </ol>
+{% else %}
+    <p>Nothing to see here</p>
+{% endif %}
 {% endblock %}
