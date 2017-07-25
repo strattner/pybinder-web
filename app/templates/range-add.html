@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% block content %}
+{% if force %}
+    <h2>Range Replace</h2>
+{% else %}
+    <h2>Range Add</h2>
+{% endif %}
+<p>
+    Enter hostname (assumes {{ zone }}) or FQDN and the starting IP address.
+    The hostname portion of the name should either end with the starting index, or you must
+    specify the starting index in the field below.
+</p>
+<p>
+<u>Example</u><br>
+Entering <i>example004</i> in the name field, <i>192.168.4.54</i> in the IP address field, and <i>3</i> in the
+number field will create the following records:<br>
+example004.{{ zone }} 192.168.4.54<br>
+example005.{{ zone }} 192.168.4.55<br>
+example006.{{ zone }} 192.168.4.56<br>
+Notice that the number of characters in the index is preserved.
+</p>
+{% if force %}
+    <p>Warning: This will delete any existing records necessary to add the requested entries!</p>
+{% endif %}
+<form action ="" method="post" name="range-add">
+    {{ form.hidden_tag() }}
+    <div class="form">
+        <div class="label">
+            {{ form.name.label }}
+        </div>
+        {{form.name(size=80) }}
+        {% for error in form.name.errors %}
+            <span style="color:red;">[{{ error }}]</span>
+        {% endfor %}
+        <br>
+        <div class="label">
+        {{ form.ipaddr.label }}
+        </div>
+        {{form.ipaddr(size=80) }}
+        {% for error in form.ipaddr.errors %}
+            <span style="color:red;">[{{ error }}]</span>
+        {% endfor %}
+        <br>
+        <div class="label">
+        {{ form.num.label }}
+        </div>
+        {{ form.num(size=4) }}
+        {% for error in form.num.errors %}
+            <span style="color:red;">[{{ error }}]</span>
+        {% endfor %}
+        <div class="label">
+        {{ form.start_index.label }}
+        </div>
+        {{ form.start_index(size=10) }}
+    </div>
+    <br><br>
+    <div class="submit">
+        {% if force %}
+            <input type="submit" value="Replace" class="button">
+        {% else %}
+            <input type="submit" value="Add" class="button">
+        {% endif %}
+    </div>
+</form>
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block content %}
+    <h2>Range Delete</h2>
+    <p>
+        Enter hostname (assumes {{ zone }}), FQDN, or IP address to delete.
+    </p>
+    <form action="" method="post" name="range-delete">
+        {{ form.hidden_tag() }}
+        <div class="form">
+            <div class="label">
+                {{ form.entry.label }}
+            </div>
+            {{ form.entry(size=80) }}
+            {% for error in form.entry.errors %}
+                <span style="color: red;">[{{ error }}]</span>
+            {% endfor %}
+            <div class="label">
+                {{ form.num.label }}
+            </div>
+            {{ form.num(size=10) }}
+            {% for error in form.num.errors %}
+                <span style="color: red;">[{{ error }}]</span>
+            {% endfor %}
+        </div>
+        <br><br>
+        <div class="submit">
+            <input type="submit" value="Delete Range" class="button">
+        </div>
+    </form>
+{% endblock %}

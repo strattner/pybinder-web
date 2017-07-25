@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block content %}
+{% if force %}
+    <h2>Replace Alias</h2>
+{% else %}
+    <h2>Add Alias</h2>
+{% endif %}
+<p>
+    Enter alias hostname (assumes {{ zone }}) or FQDN and the real
+    hostname (or FQDN) it should refer to.<br>
+</p>
+{% if force %}
+    <p>Warning: This will delete any existing records necessary to add the requested entry!</p>
+{% endif %}
+<form action ="" method="post" name="alias">
+    {{ form.hidden_tag() }}
+    <div class="form">
+        <div class="label">
+            {{ form.alias.label }}
+        </div>
+        {{form.alias(size=80) }}
+        {% for error in form.alias.errors %}
+            <span style="color:red;">[{{ error }}]</span>
+        {% endfor %}
+        <br>
+        <div class="label">
+        {{ form.real_name.label }}
+        </div>
+        {{form.real_name(size=80) }}
+        {% for error in form.real_name.errors %}
+            <span style="color:red;">[{{ error }}]</span>
+        {% endfor %}
+    </div>
+    <br><br>
+    <div class="submit">
+        {% if force %}
+            <input type="submit" value="Replace" class="button">
+        {% else %}
+            <input type="submit" value="Add" class="button">
+        {% endif %}
+    </div>
+</form>
+{% endblock %}

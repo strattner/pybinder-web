@@ -1,3 +1,17 @@
+"""
+pybinder-web
+
+Flask application to provide a web interface to manage DNS (using pybinder).
+
+Author: Scott Strattner (sstrattn@us.ibm.com)
+
+Copyright (c) 2017 IBM Corp.
+"""
+
+# PyLint treats any variable outside of a function as a constant (instead
+# of a global variable). Disabling this check.
+# pylint: disable=invalid-name
+
 import os
 import sys
 from collections import OrderedDict
@@ -5,30 +19,44 @@ from pam import pam
 from flask import render_template
 from flask_httpauth import HTTPBasicAuth
 from app import app
-from .forms import AddForm, DeleteForm, SearchForm
+from .forms import AddForm, AliasForm, DeleteForm, RangeAddForm, RangeDeleteForm, SearchForm
+
+# Need to add path for pybinder
+# Assumes that pybinder is a sibling folder (same parent). Adjust if necessary.
+pybinder_path = os.path.abspath(os.path.join('..', 'pybinder'))
+sys.path.append(pybinder_path)
+from searchdns import SearchDNS
+from managedns import ManageDNS, ManageDNSError
+from modifydns import parse_key_file
 
 class SystemAuth(object):
     """
     Rely on PAM for system authentication verification
     """
 
+    auth_service = 'login'
+
     def __init__(self):
         self.auth = pam()
+        self.service = self.__class__.auth_service
 
     def authenticate(self, user, pwd):
-        return self.auth.authenticate(user, pwd, service='login')
+        """
+        Use PAM module to verify credentials against system
+        """
+        return self.auth.authenticate(user, pwd, service=self.service)
 
-auth = HTTPBasicAuth()
+    def change_service(self, new_service):
+        """
+        Change to another PAM service (no validation performed)
+        """
+        self.service = new_service
+
+# Global variable declarations
+http_auth = HTTPBasicAuth()
 system_auth = SystemAuth()
 
-# Assumes that pybinder is a sibling folder (same parent). Adjust if necessary.
-pybinder_path = os.path.abspath(os.path.join('..', 'pybinder'))
-sys.path.append(pybinder_path)
-
-from searchdns import SearchDNS
-from managedns import ManageDNS, ManageDNSError
-from modifydns import parse_key_file
-
+# This items should be placed in a config file
 server = "129.40.40.21"
 forward_zone = "pbm.ihost.com"
 reverse_zone = "40.129.in-addr.arpa"
@@ -48,26 +76,39 @@ def create_manager(user):
     return ManageDNS(nameserver=server, forward_zone=forward_zone,
                      reverse_zone=reverse_zone, user=user, key_name=key_name, key_hash=key_hash)
 
-@auth.verify_password
+@http_auth.verify_password
 def verify_pwd(user, pwd):
+    """
+    This works, so long as the system relies on local auth (not some custom PAM module)
+    """
     return system_auth.authenticate(user, pwd)
 
 @app.route('/')
 @app.route('/index')
 def index():
-    return render_template('index.html', title='Home', user=auth.username())
+    """
+    Home page, should show any important messages, links to help, etc.
+    """
+    return render_template('index.html', title='Home', user=http_auth.username())
 
 @app.route('/search/<name_or_address>')
 def search_specific(name_or_address):
-    user = auth.username()
+    """
+    Allows for direct searches through the URL (not the same as the API)
+    """
+    user = http_auth.username()
     answer = {}
     answer[name_or_address] = str(searcher.query(name_or_address)).split(' ', 1)[1]
     return render_template('search_results.html', title='Search', answer=answer, user=user)
 
 @app.route('/search', methods=['GET', 'POST'])
 def search_main():
+    """
+    Main search method. It is not required to authenticate to access search,
+    but user identity is retrieved so that it can show up on the page.
+    """
     form = SearchForm()
-    user = auth.username()
+    user = http_auth.username()
     if form.validate_on_submit():
         query_terms = form.search_terms.data.split(' ')
         answer = OrderedDict()
@@ -78,10 +119,13 @@ def search_main():
     return render_template('search.html', title='Search', zone=forward_zone, form=form, user=user)
 
 @app.route('/add', methods=['GET', 'POST'])
-@auth.login_required
+@http_auth.login_required
 def add_main(force=False, title='Add'):
+    """
+    Main add method.
+    """
     form = AddForm()
-    user = auth.username()
+    user = http_auth.username()
     if user not in dns_manager:
         dns_manager[user] = create_manager(user)
     if form.validate_on_submit():
@@ -89,49 +133,135 @@ def add_main(force=False, title='Add'):
         ipaddr = form.ipaddr.data.split(' ')
         try:
             answer = dns_manager[user].add_record(name, ipaddr, force)
-        except ManageDNSError as mde:
+        except (ManageDNSError, ValueError) as mde:
             return render_template('errors.html', title='Error', error=[mde], user=user)
         return render_template('results.html', title=title, answer=answer, user=user)
     return render_template('add.html', title=title, force=force,
                            zone=forward_zone, user=user, form=form)
 
+@app.route('/alias', methods=['GET', 'POST'])
+@http_auth.login_required
+def add_alias(force=False, title='Add Alias'):
+    """
+    Main (and only) alias method. No current implementation of 'replace alias',
+    and no need for a range function.
+    """
+    form = AliasForm()
+    user = http_auth.username()
+    if user not in dns_manager:
+        dns_manager[user] = create_manager(user)
+    if form.validate_on_submit():
+        alias = form.alias.data
+        real_name = form.real_name.data
+        try:
+            answer = dns_manager[user].add_alias(alias, real_name, force)
+        except (ManageDNSError, ValueError) as mde:
+            return render_template('errors.html', title='Error', error=[mde], user=user)
+        return render_template('results.html', title=title, answer=answer, user=user)
+    return render_template('alias.html', title=title, force=force,
+                           zone=forward_zone, user=user, form=form)
+
+@app.route('/range-add', methods=['GET', 'POST'])
+@http_auth.login_required
+def add_range(force=False, title='Range Add'):
+    """
+    Add Range method
+    """
+    form = RangeAddForm()
+    user = http_auth.username()
+    if user not in dns_manager:
+        dns_manager[user] = create_manager(user)
+    if form.validate_on_submit():
+        name = form.name.data
+        ipaddr = form.ipaddr.data
+        num = form.num.data
+        start_index = form.start_index.data
+        try:
+            answer = dns_manager[user].add_range(name, ipaddr, num, start_index, force)
+        except (ManageDNSError, ValueError) as mde:
+            return render_template('errors.html', title='Error', error=[mde], user=user)
+        return render_template('results.html', title=title, answer=answer, user=user)
+    return render_template('range-add.html', title=title, force=force,
+                           zone=forward_zone, user=user, form=form)
+
 @app.route('/replace', methods=['GET', 'POST'])
-@auth.login_required
+@http_auth.login_required
 def replace_main():
+    """
+    Replace method - calls add_main with force=True
+    """
     return add_main(True, 'Replace')
 
+@app.route('/range-replace', methods=['GET', 'POST'])
+@http_auth.login_required
+def replace_range():
+    """
+    Replace Range method - calls add_range with force=True
+    """
+    return add_range(True, 'Range Replace')
+
 @app.route('/delete', methods=['GET', 'POST'])
-@auth.login_required
+@http_auth.login_required
 def delete_main():
+    """
+    Main delete method
+    """
     form = DeleteForm()
-    user = auth.username()
+    user = http_auth.username()
     if user not in dns_manager:
         dns_manager[user] = create_manager(user)
     if form.validate_on_submit():
         entry = form.entry.data
         try:
             answer = dns_manager[user].delete_record(entry)
-        except ManageDNSError as mde:
+        except (ManageDNSError, ValueError) as mde:
             return render_template('errors.html', title='Error', error=[mde], user=user)
         return render_template('results.html', title='Delete', answer=answer, user=user)
     return render_template('delete.html', title='Delete', zone=forward_zone, user=user, form=form)
 
-@app.route('/history')
-@auth.login_required
-def history():
-    user = auth.username()
+@app.route('/range-delete', methods=['GET', 'POST'])
+@http_auth.login_required
+def delete_range():
+    """
+    Delete range method (just to stop pylint from complaining)
+    """
+    form = RangeDeleteForm()
+    user = http_auth.username()
     if user not in dns_manager:
         dns_manager[user] = create_manager(user)
-    history = dns_manager[user].get_history()
-    if history:
-        history = reversed(history)
-    return render_template('history.html', title='History', history=history, user=user)
+    if form.validate_on_submit():
+        entry = form.entry.data
+        num = form.num.data
+        try:
+            answer = dns_manager[user].delete_range(entry, num)
+        except (ManageDNSError, ValueError) as mde:
+            return render_template('errors.html', title='Error', error=[mde], user=user)
+        return render_template('results.html', title='Range Delete', answer=answer, user=user)
+    return render_template('range-delete.html', title='Range Delete', zone=forward_zone,
+                           user=user, form=form)
+
+@app.route('/history')
+@http_auth.login_required
+def history():
+    """
+    Return user history (reversed, most recent first)
+    """
+    user = http_auth.username()
+    if user not in dns_manager:
+        dns_manager[user] = create_manager(user)
+    user_history = dns_manager[user].get_history()
+    if user_history:
+        user_history = reversed(user_history)
+    return render_template('history.html', title='History', history=user_history, user=user)
 
 @app.route('/clear-history', methods=['POST'])
-@auth.login_required
+@http_auth.login_required
 def clear_history():
-    user = auth.username()
+    """
+    Clear user history
+    """
+    user = http_auth.username()
     if user in dns_manager:
         dns_manager[user].clear_history()
-    history = dns_manager[user].get_history()
-    return render_template('history.html', title='History', history=history, user=user)
+    user_history = dns_manager[user].get_history()
+    return render_template('history.html', title='History', history=user_history, user=user)
