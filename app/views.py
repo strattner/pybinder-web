@@ -15,42 +15,25 @@ Copyright (c) 2017 IBM Corp.
 import os
 import sys
 from collections import OrderedDict
-from pam import pam
 from flask import render_template
 from flask_httpauth import HTTPBasicAuth
+from flask_restful import Api
 from app import app
 from .forms import AddForm, AliasForm, DeleteForm, RangeAddForm, RangeDeleteForm, SearchForm
+from .functions import forward_zone, searcher
+from .api import SearchRecord
+from .auth import SystemAuth
 
 # Need to add path for pybinder
 # Assumes that pybinder is a sibling folder (same parent). Adjust if necessary.
 pybinder_path = os.path.abspath(os.path.join('..', 'pybinder'))
 sys.path.append(pybinder_path)
-from searchdns import SearchDNS
 from managedns import ManageDNS, ManageDNSError
 from modifydns import parse_key_file
 
-class SystemAuth(object):
-    """
-    Rely on PAM for system authentication verification
-    """
-
-    auth_service = 'login'
-
-    def __init__(self):
-        self.auth = pam()
-        self.service = self.__class__.auth_service
-
-    def authenticate(self, user, pwd):
-        """
-        Use PAM module to verify credentials against system
-        """
-        return self.auth.authenticate(user, pwd, service=self.service)
-
-    def change_service(self, new_service):
-        """
-        Change to another PAM service (no validation performed)
-        """
-        self.service = new_service
+# Enable Flask-RESTful API and add endpoints and resources
+api = Api(app)
+api.add_resource(SearchRecord, '/api/search/<entry>')
 
 # Global variable declarations
 http_auth = HTTPBasicAuth()
@@ -60,7 +43,6 @@ system_auth = SystemAuth()
 server = "129.40.40.21"
 forward_zone = "pbm.ihost.com"
 reverse_zone = "40.129.in-addr.arpa"
-searcher = SearchDNS(server, forward_zone)
 ddns_key = "../pybinder/ddns-test.key"
 dns_manager = {}
 
