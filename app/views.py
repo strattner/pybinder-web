@@ -20,8 +20,8 @@ from flask_httpauth import HTTPBasicAuth
 from flask_restful import Api
 from app import app
 from .forms import AddForm, AliasForm, DeleteForm, RangeAddForm, RangeDeleteForm, SearchForm
-from .functions import forward_zone, searcher
-from .api import SearchRecord
+from .functions import forward_zone, searcher, create_manager
+from .api import SearchRecord, AddRecord, DeleteRecord, ReplaceRecord
 from .auth import SystemAuth
 
 # Need to add path for pybinder
@@ -34,29 +34,20 @@ from modifydns import parse_key_file
 # Enable Flask-RESTful API and add endpoints and resources
 api = Api(app)
 api.add_resource(SearchRecord, '/api/search/<entry>')
+api.add_resource(AddRecord, '/api/add')
+api.add_resource(DeleteRecord, '/api/delete/<entry>')
+api.add_resource(ReplaceRecord, '/api/replace')
 
 # Global variable declarations
 http_auth = HTTPBasicAuth()
 system_auth = SystemAuth()
 
-# This items should be placed in a config file
+# These items should be placed in a config file
 server = "129.40.40.21"
 forward_zone = "pbm.ihost.com"
 reverse_zone = "40.129.in-addr.arpa"
 ddns_key = "../pybinder/ddns-test.key"
 dns_manager = {}
-
-if os.path.isfile(ddns_key):
-    key_name, key_hash = parse_key_file(ddns_key)
-else:
-    key_name, key_hash = (None, None)
-
-def create_manager(user):
-    """
-    Return a ManageDNS object associated with user (for history)
-    """
-    return ManageDNS(nameserver=server, forward_zone=forward_zone,
-                     reverse_zone=reverse_zone, user=user, key_name=key_name, key_hash=key_hash)
 
 @http_auth.verify_password
 def verify_pwd(user, pwd):
