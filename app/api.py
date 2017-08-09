@@ -3,9 +3,22 @@ Collection of Flask-RESTFul Resources
 """
 
 import ipaddress
-from flask_restful import Resource, reqparse
+from flask_httpauth import HTTPBasicAuth
+from flask_restful import abort, Resource, reqparse
 from .functions import searcher, manager
+from .auth import SystemAuth
 from managedns import ManageDNSError
+
+http_auth = HTTPBasicAuth()
+system_auth = SystemAuth()
+
+@http_auth.verify_password
+def verify_pwd(user, pwd):
+    """
+    This works, so long as the system relies on local auth (not some custom PAM module)
+    """
+    return system_auth.authenticate(user, pwd)
+
 
 class HelloWorld(Resource):
     def get(self):
@@ -16,6 +29,8 @@ class SearchRecord(Resource):
         return {entry: str(searcher.query(entry)).split(' ', 1)[1]}
 
 class AddRecord(Resource):
+
+    decorators = [http_auth.login_required]
 
     def __init__(self):
         super()
@@ -41,6 +56,8 @@ class ReplaceRecord(AddRecord):
         return self.post(force=True)
 
 class DeleteRecord(Resource):
+
+    decorators = [http_auth.login_required]
 
     def delete(self, entry):
         try:
