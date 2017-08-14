@@ -50,7 +50,33 @@ class AddRecord(Resource):
             return { 'message': 'Error: ' + str(mde) }, 400
         return { 'message': str(answer) }
 
+class AddAlias(Resource):
+
+    decorators = [http_auth.login_required]
+
+    def __init__(self):
+        super()
+        self.parser = reqparse.RequestParser()
+        self.parser.add_argument('alias', type=str, help='Hostname or FQDN', required=True)
+        self.parser.add_argument('real_name', type=str, help='Hostname or FQDN', required=True)
+
+    def post(self, force=False):
+        args = self.parser.parse_args()
+        alias = args['alias']
+        real_name = args['real_name']
+        try:
+            answer = manager.add_alias(alias, real_name, force)
+            answer = [str(a) for a in answer]
+        except (ManageDNSError, ValueError) as mde:
+            return { 'message': 'Error: ' + str(mde) }, 400
+        return { 'message': str(answer) }
+
 class ReplaceRecord(AddRecord):
+
+    def put(self):
+        return self.post(force=True)
+
+class ReplaceAlias(AddAlias):
 
     def put(self):
         return self.post(force=True)

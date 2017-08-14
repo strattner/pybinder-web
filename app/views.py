@@ -21,7 +21,7 @@ from flask_restful import Api
 from app import app
 from .forms import AddForm, AliasForm, DeleteForm, RangeAddForm, RangeDeleteForm, SearchForm
 from .functions import forward_zone, searcher, create_manager
-from .api import SearchRecord, AddRecord, DeleteRecord, ReplaceRecord
+from .api import SearchRecord, AddAlias, AddRecord, DeleteRecord, ReplaceAlias, ReplaceRecord 
 from .auth import SystemAuth
 
 # Need to add path for pybinder
@@ -34,8 +34,10 @@ from modifydns import parse_key_file
 # Enable Flask-RESTful API and add endpoints and resources
 api = Api(app)
 api.add_resource(SearchRecord, '/api/search/<entry>')
+api.add_resource(AddAlias, '/api/add_alias')
 api.add_resource(AddRecord, '/api/add')
 api.add_resource(DeleteRecord, '/api/delete/<entry>')
+api.add_resource(ReplaceAlias, '/api/replace_alias')
 api.add_resource(ReplaceRecord, '/api/replace')
 
 # Global variable declarations
