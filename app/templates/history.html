@@ -2,12 +2,6 @@
 {% block content %}
 {% if history %}
     <h3>DNS modification history for {{ user }} (most recent first):</h3>
-    <br>
-    <div class="submit">
-        <form action="/clear-history" method="post">
-            <button name="clearHistory" type="submit" class="button">Clear History</button>
-        <form>
-    </div>
     <ol>
     {% for transaction in history %}
         <li>
@@ -19,6 +13,12 @@
         </li>
     {% endfor %}
     </ol>
+    <div class="submit">
+        <form action="" method="post">
+            <button name="clearHistory" type="submit" formaction="/clear-history" class="button">Clear History</button>
+            <button name="undoLastAction" type="submit" formaction="/undo" class="button">Undo Last Action</button>
+        </form>
+    </div>
 {% else %}
     <p>Nothing to see here</p>
 {% endif %}

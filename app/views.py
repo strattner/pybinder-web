@@ -15,11 +15,12 @@ Copyright (c) 2017 IBM Corp.
 import os
 import sys
 from collections import OrderedDict
-from flask import render_template
+from flask import render_template, redirect
 from flask_httpauth import HTTPBasicAuth
 from flask_restful import Api
 from app import app
-from .forms import AddForm, AliasForm, DeleteForm, RangeAddForm, RangeDeleteForm, SearchForm
+from .forms import AddForm, AliasForm, DeleteForm, RangeAddForm
+from .forms import RangeDeleteForm, SearchForm, UndoForm
 from .functions import forward_zone, searcher, create_manager
 from .api import SearchRecord, AddAlias, AddRecord, DeleteRecord, ReplaceAlias, ReplaceRecord 
 from .auth import SystemAuth
@@ -240,3 +241,27 @@ def clear_history():
         dns_manager[user].clear_history()
     user_history = dns_manager[user].get_history()
     return render_template('history.html', title='History', history=user_history, user=user)
+
+@app.route('/undo', methods=['POST'])
+@http_auth.login_required
+def undo():
+    """
+    Undo the last operation (which can consist of multiple changes)
+    """
+    form = UndoForm()
+    user = http_auth.username()
+    if user not in dns_manager:
+        redirect('/history')
+    user_history = dns_manager[user].get_history()
+    if user_history:
+        last_action = user_history[-1]
+    else:
+        redirect('/history')
+    if form.validate_on_submit():
+        results = []
+        for action in last_action:
+            results.append(reverse_action(action))
+        return render_template('undo-results.html', title='Undo Results',
+                               results=results, user=user)
+    return render_template('undo.html', title='Undo', history=last_action,
+                               user=user, form=form)
