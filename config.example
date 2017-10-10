@@ -1,0 +1,11 @@
+# This file houses the site specific details. Change to meet your environment.
+# It is called from __init__.py in the app directory. You will need to specify
+# its location and name there.
+WTF_CSRF_ENABLED = True
+SECRET_KEY = 'crazysecretkeyforwtf'
+SERVER = '10.168.186.1'
+FORWARD_ZONE = 'example.com'
+REVERSE_ZONE = '168.10.in-addr.arpa'
+DDNS_KEY = "myddns.key"
+# This is optional
+LOGFILE = "/var/log/pybinder.log"
