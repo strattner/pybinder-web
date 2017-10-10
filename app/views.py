@@ -20,8 +20,8 @@ from flask_httpauth import HTTPBasicAuth
 from flask_restful import Api
 from app import app
 from .forms import AddForm, AliasForm, DeleteForm, RangeAddForm
-from .forms import RangeDeleteForm, SearchForm, UndoForm
-from .functions import forward_zone, searcher, create_manager
+from .forms import RangeDeleteForm, SearchForm
+from .functions import searcher, create_manager
 from .api import SearchRecord, AddAlias, AddRecord, DeleteRecord, ReplaceAlias, ReplaceRecord 
 from .auth import SystemAuth
 
@@ -41,16 +41,12 @@ api.add_resource(DeleteRecord, '/api/delete/<entry>')
 api.add_resource(ReplaceAlias, '/api/replace_alias')
 api.add_resource(ReplaceRecord, '/api/replace')
 
-# Global variable declarations
+# Global variable and constants declarations
 http_auth = HTTPBasicAuth()
 system_auth = SystemAuth()
-
-# These items should be placed in a config file
-server = "129.40.40.21"
-forward_zone = "pbm.ihost.com"
-reverse_zone = "40.129.in-addr.arpa"
-ddns_key = "../pybinder/ddns-test.key"
 dns_manager = {}
+
+FORWARD_ZONE = app.config['FORWARD_ZONE']
 
 @http_auth.verify_password
 def verify_pwd(user, pwd):
@@ -92,7 +88,7 @@ def search_main():
             result = str(searcher.query(query))
             answer[query] = result.split(' ', 1)[1]
         return render_template('search_results.html', title='Search', answer=answer, user=user)
-    return render_template('search.html', title='Search', zone=forward_zone, form=form, user=user)
+    return render_template('search.html', title='Search', zone=FORWARD_ZONE, form=form, user=user)
 
 @app.route('/add', methods=['GET', 'POST'])
 @http_auth.login_required
@@ -113,7 +109,7 @@ def add_main(force=False, title='Add'):
             return render_template('errors.html', title='Error', error=[mde], user=user)
         return render_template('results.html', title=title, answer=answer, user=user)
     return render_template('add.html', title=title, force=force,
-                           zone=forward_zone, user=user, form=form)
+                           zone=FORWARD_ZONE, user=user, form=form)
 
 @app.route('/alias', methods=['GET', 'POST'])
 @http_auth.login_required
@@ -135,7 +131,7 @@ def add_alias(force=False, title='Add Alias'):
             return render_template('errors.html', title='Error', error=[mde], user=user)
         return render_template('results.html', title=title, answer=answer, user=user)
     return render_template('alias.html', title=title, force=force,
-                           zone=forward_zone, user=user, form=form)
+                           zone=FORWARD_ZONE, user=user, form=form)
 
 @app.route('/range-add', methods=['GET', 'POST'])
 @http_auth.login_required
@@ -158,7 +154,7 @@ def add_range(force=False, title='Range Add'):
             return render_template('errors.html', title='Error', error=[mde], user=user)
         return render_template('results.html', title=title, answer=answer, user=user)
     return render_template('range-add.html', title=title, force=force,
-                           zone=forward_zone, user=user, form=form)
+                           zone=FORWARD_ZONE, user=user, form=form)
 
 @app.route('/replace', methods=['GET', 'POST'])
 @http_auth.login_required
@@ -193,7 +189,7 @@ def delete_main():
         except (ManageDNSError, ValueError) as mde:
             return render_template('errors.html', title='Error', error=[mde], user=user)
         return render_template('results.html', title='Delete', answer=answer, user=user)
-    return render_template('delete.html', title='Delete', zone=forward_zone, user=user, form=form)
+    return render_template('delete.html', title='Delete', zone=FORWARD_ZONE, user=user, form=form)
 
 @app.route('/range-delete', methods=['GET', 'POST'])
 @http_auth.login_required
@@ -213,7 +209,7 @@ def delete_range():
         except (ManageDNSError, ValueError) as mde:
             return render_template('errors.html', title='Error', error=[mde], user=user)
         return render_template('results.html', title='Range Delete', answer=answer, user=user)
-    return render_template('range-delete.html', title='Range Delete', zone=forward_zone,
+    return render_template('range-delete.html', title='Range Delete', zone=FORWARD_ZONE,
                            user=user, form=form)
 
 @app.route('/history')
@@ -241,27 +237,3 @@ def clear_history():
         dns_manager[user].clear_history()
     user_history = dns_manager[user].get_history()
     return render_template('history.html', title='History', history=user_history, user=user)
-
-@app.route('/undo', methods=['POST'])
-@http_auth.login_required
-def undo():
-    """
-    Undo the last operation (which can consist of multiple changes)
-    """
-    form = UndoForm()
-    user = http_auth.username()
-    if user not in dns_manager:
-        redirect('/history')
-    user_history = dns_manager[user].get_history()
-    if user_history:
-        last_action = user_history[-1]
-    else:
-        redirect('/history')
-    if form.validate_on_submit():
-        results = []
-        for action in last_action:
-            results.append(reverse_action(action))
-        return render_template('undo-results.html', title='Undo Results',
-                               results=results, user=user)
-    return render_template('undo.html', title='Undo', history=last_action,
-                               user=user, form=form)

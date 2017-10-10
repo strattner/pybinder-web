@@ -24,6 +24,3 @@ class RangeAddForm(AddForm):
 
 class RangeDeleteForm(DeleteForm):
     num = IntegerField('Number of entries:', validators=[DataRequired()])
-
-class UndoForm(FlaskForm):
-    pass
