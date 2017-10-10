@@ -1,2 +1,0 @@
-WTF_CSRF_ENABLED = True
-SECRET_KEY = 'fj9272hkf$#9572j!)($'
