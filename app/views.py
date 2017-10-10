@@ -105,6 +105,7 @@ def add_main(force=False, title='Add'):
         ipaddr = form.ipaddr.data.split(' ')
         try:
             answer = dns_manager[user].add_record(name, ipaddr, force)
+            app.logger.info(user + " added " + name + " " + ipaddr)
         except (ManageDNSError, ValueError) as mde:
             return render_template('errors.html', title='Error', error=[mde], user=user)
         return render_template('results.html', title=title, answer=answer, user=user)
@@ -127,6 +128,7 @@ def add_alias(force=False, title='Add Alias'):
         real_name = form.real_name.data
         try:
             answer = dns_manager[user].add_alias(alias, real_name, force)
+            app.logger.info(user + " added alias " + alias + " for " + real_name)
         except (ManageDNSError, ValueError) as mde:
             return render_template('errors.html', title='Error', error=[mde], user=user)
         return render_template('results.html', title=title, answer=answer, user=user)
@@ -150,6 +152,8 @@ def add_range(force=False, title='Range Add'):
         start_index = form.start_index.data
         try:
             answer = dns_manager[user].add_range(name, ipaddr, num, start_index, force)
+            logmessage = " added " + str(num) + " entries starting with " + name + str(start_index)
+            app.logger.info(user + logmessage)
         except (ManageDNSError, ValueError) as mde:
             return render_template('errors.html', title='Error', error=[mde], user=user)
         return render_template('results.html', title=title, answer=answer, user=user)
@@ -186,6 +190,7 @@ def delete_main():
         entry = form.entry.data
         try:
             answer = dns_manager[user].delete_record(entry)
+            app.logger.info(user + " deleted " + entry)
         except (ManageDNSError, ValueError) as mde:
             return render_template('errors.html', title='Error', error=[mde], user=user)
         return render_template('results.html', title='Delete', answer=answer, user=user)
@@ -206,6 +211,7 @@ def delete_range():
         num = form.num.data
         try:
             answer = dns_manager[user].delete_range(entry, num)
+            app.logger.info(user + " deleted " + str(num) + " entries starting with " + entry)
         except (ManageDNSError, ValueError) as mde:
             return render_template('errors.html', title='Error', error=[mde], user=user)
         return render_template('results.html', title='Range Delete', answer=answer, user=user)
@@ -235,5 +241,6 @@ def clear_history():
     user = http_auth.username()
     if user in dns_manager:
         dns_manager[user].clear_history()
+        app.logger.info(user + " cleared their history")
     user_history = dns_manager[user].get_history()
     return render_template('history.html', title='History', history=user_history, user=user)
