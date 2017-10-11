@@ -15,22 +15,21 @@ Copyright (c) 2017 IBM Corp.
 import os
 import sys
 from collections import OrderedDict
-from flask import render_template, redirect
+from flask import render_template
 from flask_httpauth import HTTPBasicAuth
 from flask_restful import Api
 from app import app
 from .forms import AddForm, AliasForm, DeleteForm, RangeAddForm
 from .forms import RangeDeleteForm, SearchForm
 from .functions import searcher, create_manager
-from .api import SearchRecord, AddAlias, AddRecord, DeleteRecord, ReplaceAlias, ReplaceRecord 
+from .api import SearchRecord, AddAlias, AddRecord, DeleteRecord, ReplaceAlias, ReplaceRecord
 from .auth import SystemAuth
 
 # Need to add path for pybinder
 # Assumes that pybinder is a sibling folder (same parent). Adjust if necessary.
 pybinder_path = os.path.abspath(os.path.join('..', 'pybinder'))
 sys.path.append(pybinder_path)
-from managedns import ManageDNS, ManageDNSError
-from modifydns import parse_key_file
+from managedns import ManageDNSError
 
 # Enable Flask-RESTful API and add endpoints and resources
 api = Api(app)
@@ -47,6 +46,21 @@ system_auth = SystemAuth()
 dns_manager = {}
 
 FORWARD_ZONE = app.config['FORWARD_ZONE']
+if 'ALLOWED_DOMAINS' in app.config:
+    ALLOWED_DOMAINS = app.config['ALLOWED_DOMAINS'].split(',')
+else:
+    ALLOWED_DOMAINS = None
+
+def name_allowed(name):
+    """ Return true if name is within the allowed domain list """
+    if not ALLOWED_DOMAINS:
+        return True
+    [hostname, domain] = name.split('.', 1)
+    if hostname == name:
+        return True
+    if domain in ALLOWED_DOMAINS:
+        return True
+    return False
 
 @http_auth.verify_password
 def verify_pwd(user, pwd):
@@ -104,8 +118,10 @@ def add_main(force=False, title='Add'):
         name = form.name.data
         ipaddr = form.ipaddr.data.split(' ')
         try:
+            if not name_allowed(name):
+                raise ValueError("Not authorized to add " + name)
             answer = dns_manager[user].add_record(name, ipaddr, force)
-            app.logger.info(user + " added " + name + " " + ipaddr)
+            app.logger.info(user + " added " + name + " " + ' '.join(ipaddr))
         except (ManageDNSError, ValueError) as mde:
             return render_template('errors.html', title='Error', error=[mde], user=user)
         return render_template('results.html', title=title, answer=answer, user=user)
@@ -127,6 +143,8 @@ def add_alias(force=False, title='Add Alias'):
         alias = form.alias.data
         real_name = form.real_name.data
         try:
+            if not name_allowed(alias):
+                raise ValueError("Not authorized to add " + alias)
             answer = dns_manager[user].add_alias(alias, real_name, force)
             app.logger.info(user + " added alias " + alias + " for " + real_name)
         except (ManageDNSError, ValueError) as mde:
@@ -151,6 +169,8 @@ def add_range(force=False, title='Range Add'):
         num = form.num.data
         start_index = form.start_index.data
         try:
+            if not name_allowed(name):
+                raise ValueError("Not authorized to add " + name)
             answer = dns_manager[user].add_range(name, ipaddr, num, start_index, force)
             logmessage = " added " + str(num) + " entries starting with " + name + str(start_index)
             app.logger.info(user + logmessage)

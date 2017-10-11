@@ -1,11 +1,21 @@
 # This file houses the site specific details. Change to meet your environment.
 # It is called from __init__.py in the app directory. You will need to specify
 # its location and name there.
+
+## The following are required values
+# Enable form security (cross-site request forgery prevention) and specify the secret key
 WTF_CSRF_ENABLED = True
 SECRET_KEY = 'crazysecretkeyforwtf'
+# Specify the DNS server that should be managed
 SERVER = '10.168.186.1'
+# Specify the default forward zone, used when FQDN is not provided
 FORWARD_ZONE = 'example.com'
-REVERSE_ZONE = '168.10.in-addr.arpa'
+# Specify location of the DDNS key that authenticates with the DNS server to manage BIND
 DDNS_KEY = "myddns.key"
-# This is optional
+## The following are optional values
+# Specify the reverse zone, when it doesn't use expected "reverse class C" format.
+REVERSE_ZONE = '168.10.in-addr.arpa'
+# Define a location to send informational log messages (who changes what)
 LOGFILE = "/var/log/pybinder.log"
+# Define a list of domains that can be modified, in addition to the default FORWARD_ZONE
+ALLOWED_DOMAINS = 'another.example.com', 'different.example.com'

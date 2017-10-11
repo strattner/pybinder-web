@@ -4,7 +4,7 @@ Collection of Flask-RESTFul Resources
 
 import ipaddress
 from flask_httpauth import HTTPBasicAuth
-from flask_restful import abort, Resource, reqparse
+from flask_restful import Resource, reqparse
 from .functions import searcher, manager
 from .auth import SystemAuth
 from managedns import ManageDNSError
@@ -19,17 +19,14 @@ def verify_pwd(user, pwd):
     """
     return system_auth.authenticate(user, pwd)
 
-
-class HelloWorld(Resource):
-    def get(self):
-        return {'hello': 'world'}
-
 class SearchRecord(Resource):
+    """ Represent a search query and result """
     def get(self, entry):
+        """ Return search result from get request """
         return {entry: str(searcher.query(entry)).split(' ', 1)[1]}
 
 class AddRecord(Resource):
-
+    """ Represent an A and PTR add """
     decorators = [http_auth.login_required]
 
     def __init__(self):
@@ -39,6 +36,7 @@ class AddRecord(Resource):
         self.parser.add_argument('address', type=str, help='IP address', required=True)
 
     def post(self, force=False):
+        """ Add record from post request """
         args = self.parser.parse_args()
         name = args['name']
         ipaddr = args['address']
@@ -47,11 +45,11 @@ class AddRecord(Resource):
             answer = manager.add_record(name, str(ip), force)
             answer = [str(a) for a in answer]
         except (ManageDNSError, ValueError) as mde:
-            return { 'message': 'Error: ' + str(mde) }, 400
-        return { 'message': str(answer) }
+            return {'message': 'Error: ' + str(mde)}, 400
+        return {'message': str(answer)}
 
 class AddAlias(Resource):
-
+    """ Represent a CNAME add """
     decorators = [http_auth.login_required]
 
     def __init__(self):
@@ -61,6 +59,7 @@ class AddAlias(Resource):
         self.parser.add_argument('real_name', type=str, help='Hostname or FQDN', required=True)
 
     def post(self, force=False):
+        """ Add alias from post request """
         args = self.parser.parse_args()
         alias = args['alias']
         real_name = args['real_name']
@@ -68,27 +67,32 @@ class AddAlias(Resource):
             answer = manager.add_alias(alias, real_name, force)
             answer = [str(a) for a in answer]
         except (ManageDNSError, ValueError) as mde:
-            return { 'message': 'Error: ' + str(mde) }, 400
-        return { 'message': str(answer) }
+            return {'message': 'Error: ' + str(mde)}, 400
+        return {'message': str(answer)}
 
 class ReplaceRecord(AddRecord):
+    """ Represent an A and PTR add/replace """
 
     def put(self):
+        """ Add record from post request """
         return self.post(force=True)
 
 class ReplaceAlias(AddAlias):
+    """ Represent a CNAME add/replace """
 
     def put(self):
+        """ Add alias from post request """
         return self.post(force=True)
 
 class DeleteRecord(Resource):
-
+    """ Represent removal of A (and PTR) or CNAME """
     decorators = [http_auth.login_required]
 
     def delete(self, entry):
+        """ Remove record from delete request """
         try:
             answer = manager.delete_record(entry)
             answer = [str(a) for a in answer]
         except (ManageDNSError, ValueError) as mde:
-            return { 'message': 'Error: ' + str(mde) }, 400
-        return { 'message': str(answer) }
+            return {'message': 'Error: ' + str(mde)}, 400
+        return {'message': str(answer)}

@@ -17,8 +17,12 @@ def create_manager(user):
     """
     Return a ManageDNS object associated with user (for history)
     """
+    if 'REVERSE_ZONE' in app.config:
+        revzone = app.config['REVERSE_ZONE']
+    else:
+        revzone = None
     return ManageDNS(nameserver=app.config['SERVER'], forward_zone=app.config['FORWARD_ZONE'],
-                     reverse_zone=app.config['REVERSE_ZONE'], user=user, key_name=key_name,
+                     reverse_zone=revzone, user=user, key_name=key_name,
                      key_hash=key_hash)
 
 
