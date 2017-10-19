@@ -58,7 +58,7 @@ def name_allowed(name):
     [hostname, domain] = name.split('.', 1)
     if hostname == name:
         return True
-    if domain in ALLOWED_DOMAINS:
+    if domain in ALLOWED_DOMAINS or domain == FORWARD_ZONE:
         return True
     return False
 
@@ -115,8 +115,11 @@ def add_main(force=False, title='Add'):
     if user not in dns_manager:
         dns_manager[user] = create_manager(user)
     if form.validate_on_submit():
-        name = form.name.data
-        ipaddr = form.ipaddr.data.split(' ')
+        name = ''.join(form.name.data.split())
+        ipaddr = form.ipaddr.data.strip()
+        ipaddr = ipaddr.split(' ')
+        if '.' not in name:
+            name = name + '.' + FORWARD_ZONE
         try:
             if not name_allowed(name):
                 raise ValueError("Not authorized to add " + name)
@@ -140,8 +143,12 @@ def add_alias(force=False, title='Add Alias'):
     if user not in dns_manager:
         dns_manager[user] = create_manager(user)
     if form.validate_on_submit():
-        alias = form.alias.data
-        real_name = form.real_name.data
+        alias = ''.join(form.alias.data.split())
+        real_name = ''.join(form.real_name.data.split())
+        if '.' not in alias:
+            alias = alias + '.' + FORWARD_ZONE
+        if '.' not in real_name:
+            real_name = real_name + '.' + FORWARD_ZONE
         try:
             if not name_allowed(alias):
                 raise ValueError("Not authorized to add " + alias)
@@ -164,10 +171,12 @@ def add_range(force=False, title='Range Add'):
     if user not in dns_manager:
         dns_manager[user] = create_manager(user)
     if form.validate_on_submit():
-        name = form.name.data
-        ipaddr = form.ipaddr.data
+        name = ''.join(form.name.data.split())
+        ipaddr = form.ipaddr.data.strip()
         num = form.num.data
         start_index = form.start_index.data
+        if '.' not in name:
+            name = name + '.' + FORWARD_ZONE
         try:
             if not name_allowed(name):
                 raise ValueError("Not authorized to add " + name)
@@ -207,7 +216,7 @@ def delete_main():
     if user not in dns_manager:
         dns_manager[user] = create_manager(user)
     if form.validate_on_submit():
-        entry = form.entry.data
+        entry = form.entry.data.strip()
         try:
             answer = dns_manager[user].delete_record(entry)
             app.logger.info(user + " deleted " + entry)
@@ -227,7 +236,7 @@ def delete_range():
     if user not in dns_manager:
         dns_manager[user] = create_manager(user)
     if form.validate_on_submit():
-        entry = form.entry.data
+        entry = form.entry.data.strip()
         num = form.num.data
         try:
             answer = dns_manager[user].delete_range(entry, num)
