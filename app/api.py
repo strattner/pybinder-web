@@ -39,10 +39,9 @@ class AddRecord(Resource):
         """ Add record from post request """
         args = self.parser.parse_args()
         name = args['name']
-        ipaddr = args['address']
+        ip = args['address'].split(' ')
         try:
-            ip = ipaddress.ip_address(ipaddr)
-            answer = manager.add_record(name, str(ip), force)
+            answer = manager.add_record(name, ip, force)
             answer = [str(a) for a in answer]
         except (ManageDNSError, ValueError) as mde:
             return {'message': 'Error: ' + str(mde)}, 400
@@ -73,16 +72,9 @@ class AddAlias(Resource):
 class ReplaceRecord(AddRecord):
     """ Represent an A and PTR add/replace """
 
-    def put(self):
+    def post(self, force=True):
         """ Add record from post request """
-        return self.post(force=True)
-
-class ReplaceAlias(AddAlias):
-    """ Represent a CNAME add/replace """
-
-    def put(self):
-        """ Add alias from post request """
-        return self.post(force=True)
+        return super(ReplaceRecord, self).post(force)
 
 class DeleteRecord(Resource):
     """ Represent removal of A (and PTR) or CNAME """

@@ -22,7 +22,7 @@ from app import app
 from .forms import AddForm, AliasForm, DeleteForm, RangeAddForm
 from .forms import RangeDeleteForm, SearchForm
 from .functions import searcher, create_manager
-from .api import SearchRecord, AddAlias, AddRecord, DeleteRecord, ReplaceAlias, ReplaceRecord
+from .api import SearchRecord, AddAlias, AddRecord, DeleteRecord, ReplaceRecord
 from .auth import SystemAuth
 
 # Need to add path for pybinder
@@ -34,10 +34,9 @@ from managedns import ManageDNSError
 # Enable Flask-RESTful API and add endpoints and resources
 api = Api(app)
 api.add_resource(SearchRecord, '/api/search/<entry>')
-api.add_resource(AddAlias, '/api/add_alias')
+api.add_resource(AddAlias, '/api/alias')
 api.add_resource(AddRecord, '/api/add')
 api.add_resource(DeleteRecord, '/api/delete/<entry>')
-api.add_resource(ReplaceAlias, '/api/replace_alias')
 api.add_resource(ReplaceRecord, '/api/replace')
 
 # Global variable and constants declarations
