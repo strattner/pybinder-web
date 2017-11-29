@@ -14,6 +14,7 @@ Copyright (c) 2017 IBM Corp.
 
 import os
 import sys
+import ipaddress
 from collections import OrderedDict
 from flask import render_template
 from flask_httpauth import HTTPBasicAuth
@@ -50,6 +51,11 @@ if 'ALLOWED_DOMAINS' in app.config:
 else:
     ALLOWED_DOMAINS = None
 
+if 'SUBNETS' in app.config:
+    SUBNETS = [ipaddress.ip_network(x) for x in app.config['SUBNETS']]
+else:
+    SUBNETS = None
+
 def name_allowed(name):
     """ Return true if name is within the allowed domain list """
     if not ALLOWED_DOMAINS:
@@ -59,6 +65,16 @@ def name_allowed(name):
         return True
     if domain in ALLOWED_DOMAINS or domain == FORWARD_ZONE:
         return True
+    return False
+
+def address_allowed(ip):
+    """ Return true if IP address is within the allowed subnet list """
+    if not SUBNETS:
+        return True
+    ip = ipaddress.ip_address(ip)
+    for sub in SUBNETS:
+        if ip in sub:
+            return True
     return False
 
 @http_auth.verify_password
@@ -122,6 +138,9 @@ def add_main(force=False, title='Add'):
         try:
             if not name_allowed(name):
                 raise ValueError("Not authorized to add " + name)
+            for ip in ipaddr:
+                if not address_allowed(ip):
+                    raise ValueError("Not authorized to add " + ip)
             answer = dns_manager[user].add_record(name, ipaddr, force)
             app.logger.info(user + " added " + name + " " + ' '.join(ipaddr))
         except (ManageDNSError, ValueError) as mde:
@@ -179,6 +198,8 @@ def add_range(force=False, title='Range Add'):
         try:
             if not name_allowed(name):
                 raise ValueError("Not authorized to add " + name)
+            if not address_allowed(ipaddr):
+                raise ValueError("Not authorized to add " + ipaddr)
             answer = dns_manager[user].add_range(name, ipaddr, num, start_index, force)
             logmessage = " added " + str(num) + " entries starting with " + name + str(start_index)
             app.logger.info(user + logmessage)

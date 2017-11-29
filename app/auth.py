@@ -3,6 +3,12 @@ Simple class to manage system authentication through PAM
 """
 
 from pam import pam
+from app import app
+
+if 'USERS' in app.config:
+    ALLOWED_USERS = app.config['USERS']
+else:
+    ALLOWED_USERS = None
 
 class SystemAuth(object):
     """
@@ -19,7 +25,9 @@ class SystemAuth(object):
         """
         Use PAM module to verify credentials against system
         """
-        return self.auth.authenticate(user, pwd, service=self.service)
+        if ALLOWED_USERS and user in ALLOWED_USERS:
+            return self.auth.authenticate(user, pwd, service=self.service)
+        return False
 
     def change_service(self, new_service):
         """

@@ -19,3 +19,7 @@ REVERSE_ZONE = '168.10.in-addr.arpa'
 LOGFILE = "/var/log/pybinder.log"
 # Define a list of domains that can be modified, in addition to the default FORWARD_ZONE
 ALLOWED_DOMAINS = 'another.example.com', 'different.example.com'
+# Define a list of subnets that can be modified (PTR records)
+SUBNETS = '10.1.1.0/24', '192.168.0.0/16'
+# Define a list of system users allowed to access the web interface and API
+USERS = 'dnsadmin1', 'dnsadmin2'
