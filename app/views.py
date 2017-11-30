@@ -60,8 +60,9 @@ def name_allowed(name):
     """ Return true if name is within the allowed domain list """
     if not ALLOWED_DOMAINS:
         return True
-    [hostname, domain] = name.split('.', 1)
-    if hostname == name:
+    if '.' in name:
+        [hostname, domain] = name.split('.', 1)
+    else:
         return True
     if domain in ALLOWED_DOMAINS or domain == FORWARD_ZONE:
         return True
@@ -76,6 +77,14 @@ def address_allowed(ip):
         if ip in sub:
             return True
     return False
+
+def is_address(entry):
+    """ Check if entry is a valid IP address """
+    try:
+        _ = ipaddress.ip_address(entry)
+    except ValueError:
+        return False
+    return True
 
 @http_auth.verify_password
 def verify_pwd(user, pwd):
@@ -238,6 +247,12 @@ def delete_main():
     if form.validate_on_submit():
         entry = form.entry.data.strip()
         try:
+            if is_address(entry):
+                if not address_allowed(entry):
+                    raise ValueError("Not authorized to delete " + entry)
+            else:
+                if not name_allowed(entry):
+                    raise ValueError("Not authorized to delete " + entry)
             answer = dns_manager[user].delete_record(entry)
             app.logger.info(user + " deleted " + entry)
         except (ManageDNSError, ValueError) as mde:
@@ -259,6 +274,12 @@ def delete_range():
         entry = form.entry.data.strip()
         num = form.num.data
         try:
+            if is_address(entry):
+                if not address_allowed(entry):
+                    raise ValueError("Not authorized to add " + entry)
+            else:
+                if not name_allowed(entry):
+                    raise ValueError("Not authorized to add " + entry)
             answer = dns_manager[user].delete_range(entry, num)
             app.logger.info(user + " deleted " + str(num) + " entries starting with " + entry)
         except (ManageDNSError, ValueError) as mde:

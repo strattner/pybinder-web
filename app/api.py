@@ -8,9 +8,51 @@ from flask_restful import Resource, reqparse
 from .functions import searcher, manager
 from .auth import SystemAuth
 from managedns import ManageDNSError
+from app import app
 
 http_auth = HTTPBasicAuth()
 system_auth = SystemAuth()
+
+FORWARD_ZONE = app.config['FORWARD_ZONE']
+if 'ALLOWED_DOMAINS' in app.config:
+    ALLOWED_DOMAINS = app.config['ALLOWED_DOMAINS'].split(',')
+else:
+    ALLOWED_DOMAINS = None
+
+if 'SUBNETS' in app.config:
+    SUBNETS = [ipaddress.ip_network(x) for x in app.config['SUBNETS']]
+else:
+    SUBNETS = None
+
+def name_allowed(name):
+    """ Return true if name is within the allowed domain list """
+    if not ALLOWED_DOMAINS:
+        return True
+    if '.' in name:
+        [hostname, domain] = name.split('.', 1)
+    else:
+        return True
+    if domain in ALLOWED_DOMAINS or domain == FORWARD_ZONE:
+        return True
+    return False
+
+def address_allowed(ip):
+    """ Return true if IP address is within the allowed subnet list """
+    if not SUBNETS:
+        return True
+    ip = ipaddress.ip_address(ip)
+    for sub in SUBNETS:
+        if ip in sub:
+            return True
+    return False
+
+def is_address(entry):
+    """ Checks if entry is a valid IP address """
+    try:
+        _ = ipaddress.ip_ipaddress(entry)
+    except ValueError:
+        return False
+    return True
 
 @http_auth.verify_password
 def verify_pwd(user, pwd):
@@ -41,6 +83,11 @@ class AddRecord(Resource):
         name = args['name']
         ip = args['address'].split(' ')
         try:
+            if not name_allowed(name):
+                raise ValueError("Not authorized to add " + name)
+            for addr in ip:
+                if not address_allowed(addr):
+                    raise ValueError("Not authorized to add " + addr)
             answer = manager.add_record(name, ip, force)
             answer = [str(a) for a in answer]
         except (ManageDNSError, ValueError) as mde:
@@ -63,6 +110,8 @@ class AddAlias(Resource):
         alias = args['alias']
         real_name = args['real_name']
         try:
+            if not name_allowed(alias):
+                raise ValueError("Not authorized to add " + alias)
             answer = manager.add_alias(alias, real_name, force)
             answer = [str(a) for a in answer]
         except (ManageDNSError, ValueError) as mde:
@@ -83,6 +132,12 @@ class DeleteRecord(Resource):
     def delete(self, entry):
         """ Remove record from delete request """
         try:
+            if is_address(entry):
+                if not address_allowed(entry):
+                    raise ValueError("Not authorized to delete " + entry)
+            else:
+                if not name_allowed(entry):
+                    raise ValueError("Not authorized to delete " + entry)
             answer = manager.delete_record(entry)
             answer = [str(a) for a in answer]
         except (ManageDNSError, ValueError) as mde:
