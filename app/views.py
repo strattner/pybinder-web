@@ -47,7 +47,7 @@ dns_manager = {}
 
 FORWARD_ZONE = app.config['FORWARD_ZONE']
 if 'ALLOWED_DOMAINS' in app.config:
-    ALLOWED_DOMAINS = app.config['ALLOWED_DOMAINS'].split(',')
+    ALLOWED_DOMAINS = [d for d in app.config['ALLOWED_DOMAINS']]
 else:
     ALLOWED_DOMAINS = None
 

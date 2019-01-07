@@ -5,7 +5,8 @@ from app import app
 
 if __name__ == '__main__':
     # replace these with the name and location of your SSL certificate and private key
-    context = ('mycert.pem', 'private.key')
+#    context = ('mycert.pem', 'private.key')
+    context = ('cert.crt', 'privkey.key')
     if 'LOGFILE' in app.config:
         handler = logging.FileHandler(app.config['LOGFILE'])
         handler.setLevel(logging.INFO)

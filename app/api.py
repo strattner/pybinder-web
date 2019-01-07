@@ -15,7 +15,7 @@ system_auth = SystemAuth()
 
 FORWARD_ZONE = app.config['FORWARD_ZONE']
 if 'ALLOWED_DOMAINS' in app.config:
-    ALLOWED_DOMAINS = app.config['ALLOWED_DOMAINS'].split(',')
+    ALLOWED_DOMAINS = [d for d in app.config['ALLOWED_DOMAINS']]
 else:
     ALLOWED_DOMAINS = None
 
@@ -49,7 +49,7 @@ def address_allowed(ip):
 def is_address(entry):
     """ Checks if entry is a valid IP address """
     try:
-        _ = ipaddress.ip_ipaddress(entry)
+        _ = ipaddress.ip_address(entry)
     except ValueError:
         return False
     return True
